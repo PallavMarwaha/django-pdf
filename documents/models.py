@@ -7,6 +7,10 @@ User = get_user_model()
 
 
 class PDFDocument(models.Model):
+    """
+    Model for user uploaded PDF document. Linked to the user with a foreign key.
+    """
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     document = models.FileField()
 
