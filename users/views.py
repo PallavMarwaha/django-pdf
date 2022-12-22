@@ -13,6 +13,8 @@ def user_login(request):
     """
     Renders and authenticates user login
     """
+    if request.user.is_authenticated:
+        return HttpResponseRedirect(reverse("users:user-dashboard"))
 
     if request.method == "POST":
 
