@@ -1,16 +1,17 @@
+import os
+
+import PyPDF2
+import pypdfium2 as pdfium
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
-from .forms import PDFDocumentForm
-import PyPDF2
-from pdf2image import convert_from_path, convert_from_bytes
 from PIL import Image
 from pytesseract import pytesseract
-from .models import TextDocument, PDFDocument
-from django.contrib.auth import get_user_model
-from django.conf import settings
-import os
-import pypdfium2 as pdfium
+
+from .forms import PDFDocumentForm
+from .models import PDFDocument, TextDocument
 
 User = get_user_model()
 

@@ -1,9 +1,10 @@
+from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from django.http import HttpResponseRedirect
+
 from .forms import UserLoginForm, UserSignUpForm
-from django.contrib.auth import get_user_model, authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 
 User = get_user_model()
 # Create your views here.
