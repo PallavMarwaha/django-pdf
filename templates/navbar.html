@@ -36,6 +36,13 @@
       Logged in as: {{ user.username }}
     </a>
     <a
+      href="{% url 'users:documents:document-upload' %}"
+      class="mr-5 inline-flex items-center bg-red-400 text-white border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 hover:text-black rounded text-base mt-4 md:mt-0"
+    >
+      Upload docs
+    </a>
+    
+    <a
       href="{% url 'users:user-logout' %}"
       class="inline-flex items-center bg-blue-500 text-white border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 hover:text-black rounded text-base mt-4 md:mt-0"
     >
