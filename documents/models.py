@@ -12,6 +12,11 @@ class PDFDocument(models.Model):
 
 
 class TextDocument(models.Model):
+    """
+    Model for generated text from the PDF document
+    """
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     pdf = models.ForeignKey("PDFDocument", on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
+    body = models.TextField(blank=True)
