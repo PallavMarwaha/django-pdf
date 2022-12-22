@@ -28,7 +28,7 @@ def user_login(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request=request, user=user)
-                return render(request, "users/dashboard.html")
+                return HttpResponseRedirect(reverse("users:user-dashboard"))
 
     return render(request, "users/login.html")
 
@@ -37,6 +37,9 @@ def user_signup(request):
     """
     Renders and creates a new user
     """
+    if request.user.is_authenticated:
+        return HttpResponseRedirect(reverse("users:user-dashboard"))
+
     if request.method == "POST":
 
         form = UserSignUpForm(request.POST)
@@ -48,6 +51,9 @@ def user_signup(request):
             # Check if the user does not already exist and create new user
             if not User.objects.filter(username=username).exists():
                 User.objects.create_user(username=username, password=password)
+            else:
+                # if the user already exists
+                return HttpResponseRedirect(reverse("users:user-login"))
 
     return render(request, "users/signup.html")
 

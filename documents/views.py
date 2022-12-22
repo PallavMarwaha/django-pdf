@@ -2,6 +2,7 @@ import os
 
 import PyPDF2
 import pypdfium2 as pdfium
+from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
@@ -33,30 +34,59 @@ def pdf_to_text(pdf_doc):
     return content
 
 
+def check_file_ext(file):
+    """
+    Returns the extension of the file. NOT SECURE.
+    """
+    file_name: str = file.name
+    file_extension = file_name.split(".")[-1]
+
+    if file_extension == "pdf":
+        return "pdf"
+    else:
+        return "image"
+
+
 def ocr(file):
-    doc = pdfium.PdfDocument(file)
+    """
+    Returns the converted text from either a PDF or an Image
+    """
+    # If the file type is PDF
+    if check_file_ext(file) == "pdf":
+        doc = pdfium.PdfDocument(file)
+        # Check if the PDF contains more than one page
+        if len(doc) > 1:
+            return None
+        else:
+            page = doc.get_page(0)
+            pil_image = page.render_to(
+                pdfium.BitmapConv.pil_image,
+            )
+            content = ""
+            pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
+            image_text = pytesseract.image_to_string(pil_image)
 
-    # Check if the PDF contains more than one page
-    if len(doc) > 1:
-        return None
+            content = image_text
+            return content
 
-    page = doc.get_page(0)
-    pil_image = page.render_to(
-        pdfium.BitmapConv.pil_image,
-    )
+    # If the file type is IMAGE
+    elif check_file_ext(file) == "image":
+        doc = Image.open(file)
+        content = ""
 
-    content = ""
+        pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
 
-    pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
+        image_text = pytesseract.image_to_string(doc)
 
-    image_text = pytesseract.image_to_string(pil_image)
-
-    content = image_text
-    return content
+        content = image_text
+        return content
 
 
+@login_required(login_url="users:user-login")
 def document_upload(request):
-
+    """
+    Render the form for document upload and saves the converted text in the DB.
+    """
     if request.method == "POST":
         form = PDFDocumentForm(request.POST, request.FILES, user=request.user)
 
