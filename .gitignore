@@ -59,3 +59,5 @@ venv
 migrations
 
 .vscode/settings.json
+.env
+db.sqlite3
