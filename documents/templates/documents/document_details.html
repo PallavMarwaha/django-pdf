@@ -15,6 +15,7 @@
           {{ item.title }}
         </h2>
         <p class="leading-relaxed text-base">{{ item.body|linebreaks }}</p>
+        <!-- FIXME: Add a back button/link to the dashboard -->
         <!-- FIXME: Anchor tag is not in center. Change to <button> to see the desired result -->
         <a
           href="{% url 'users:documents:document-serve' text_id=item.id %}"

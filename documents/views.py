@@ -217,4 +217,18 @@ def document_serve(request, text_id):
     return response
 
 
-# TODO: Create a view for document delete
+@login_required(login_url="users:user-login")
+def document_delete(request, doc_id):
+    """
+    Deletes the document with the specified ID
+    """
+    # Check if the Text Document with the specified ID exists in the DB
+    try:
+        user = User.objects.get(username=request.user.username)
+        doc = PDFDocument.objects.get(user=user, id=doc_id)
+        doc.delete()
+        # text_doc = TextDocument.objects.delete(user=user, id=text_id)
+    except PDFDocument.DoesNotExist:
+        return HttpResponseRedirect(reverse("users:user-dashboard"))
+
+    return HttpResponseRedirect(reverse("users:user-dashboard"))
