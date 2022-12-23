@@ -1,7 +1,30 @@
 {% extends "base.html" %} {% block content %}
 <form method="POST" action="" enctype="multipart/form-data">
   <!-- FIXME: Only accept certain file types such as PDF, PNG and JPEG etc -->
-  {%csrf_token %} {{ form.as_p }}
-  <button type="submit">Submit</button>
+  {%csrf_token %} 
+  <div>
+    <div class="flex flex-col h-screen justify-center items-center">
+    <div class="mb-3 w-96">
+      <label for="formFile" class="flex justify-center form-label inline-block mb-6 text-gray-700 text-3xl">Upload Document</label>
+      <input class="form-control
+      block
+      w-full
+      px-3
+      py-1.5
+      text-base
+      font-normal
+      text-gray-700
+      bg-white bg-clip-padding
+      border border-solid border-gray-300
+      rounded
+      transition
+      ease-in-out
+      m-0
+      focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none" type="file" id="formFile" name="document">
+    </div>
+  <button type="submit" class="justify-center text-white bg-indigo-500 border-0 py-2 px-5 focus:outline-none hover:bg-indigo-600 rounded">Submit</button>
+    </div>
+  </div>
+  
 </form>
 {% endblock content %}
