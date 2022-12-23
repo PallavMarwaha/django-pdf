@@ -13,7 +13,7 @@ class PDFDocument(models.Model):
 
     title = models.CharField(max_length=50, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    document = models.FileField()
+    document = models.FileField(upload_to="docs/")
 
     def __str__(self) -> str:
         return self.title

@@ -5,7 +5,7 @@ import pypdfium2 as pdfium
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.http import HttpResponseBadRequest, HttpResponseRedirect
+from django.http import HttpResponseBadRequest, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
 from PIL import Image
@@ -18,6 +18,10 @@ User = get_user_model()
 
 
 def pdf_to_text(pdf_doc):
+    """
+    Helper function to convert PDF doc to Text doc using PyPDF2 module
+    """
+    # COMMENT: Obsolete helper function. Not in use anymore.
 
     # Read the file
     pdf = PyPDF2.PdfFileReader(pdf_doc)
@@ -36,7 +40,7 @@ def pdf_to_text(pdf_doc):
 
 def check_file_ext(file):
     """
-    Returns the extension of the file. NOT SECURE.
+    Helper function which returns the extension of the file. NOT SECURE.
     """
     file_name: str = file.name
     file_extension = file_name.split(".")[-1]
@@ -49,7 +53,7 @@ def check_file_ext(file):
 
 def ocr(file):
     """
-    Returns the converted text from either a PDF or an Image
+    Helper function which returns the converted text from either a PDF or an Image
     """
     # If the file type is PDF
     if check_file_ext(file) == "pdf":
@@ -115,3 +119,45 @@ def document_upload(request):
     form = PDFDocumentForm()
     context = {"form": form}
     return render(request, "documents/upload.html", context=context)
+
+
+@login_required(login_url="users:user-login")
+def text_detail_View(request, text_id):
+    """
+    Renders the document Text detail
+    """
+    # Check if the Text Document with the specified ID exists in the DB
+    try:
+        user = User.objects.get(username=request.user.username)
+        text_doc = TextDocument.objects.get(id=text_id, user=user)
+    except TextDocument.DoesNotExist:
+        return HttpResponseRedirect(reverse("users:user-dashboard"))
+
+    return render(
+        request, "documents/document_details.html", context={"item": text_doc}
+    )
+
+
+@login_required(login_url="users:user-login")
+def document_serve(request, text_id):
+    """
+    Serves the document in development by TextDocument ID and its corresponding PDF document
+    """
+    # Check if the Text Document with the specified ID exists in the DB
+    try:
+        user = User.objects.get(username=request.user.username)
+        text_doc = TextDocument.objects.get(id=text_id, user=user)
+    except TextDocument.DoesNotExist:
+        return HttpResponseRedirect(reverse("users:user-dashboard"))
+
+    # Get the TextDocument object and its related PDFDocument object wih foreign key relationship
+    pdf_file = text_doc.pdf.document
+    pdf_file_name = text_doc.pdf.title
+
+    # NOTE: Don't know how to specify content type for HttpResponse for different file types like PDF, PNG and JPEG etc
+    # Create a HttpResponse Object with the file
+    response = HttpResponse(pdf_file)
+    # Add file info like file name
+    response["Content-Disposition"] = f"attachment; filename=  {pdf_file_name}"
+
+    return response

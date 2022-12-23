@@ -5,6 +5,7 @@ from django.shortcuts import render
 from django.urls import reverse
 
 from .forms import UserLoginForm, UserSignUpForm
+from documents.models import PDFDocument, TextDocument
 
 User = get_user_model()
 # Create your views here.
@@ -69,4 +70,9 @@ def user_dashboard(request):
     """
     Renders user dashboard
     """
-    return render(request, "users/dashboard.html")
+    user = User.objects.get(username=request.user.username)
+
+    docs_list = PDFDocument.objects.filter(user=user)
+    text_docs_list = TextDocument.objects.filter(user=user)
+
+    return render(request, "users/dashboard.html", context={"items": text_docs_list})
