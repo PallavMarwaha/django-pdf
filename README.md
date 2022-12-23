@@ -47,6 +47,13 @@ Install dependencies
   pip install -r requirements.txt
 ```
 
+Make sure that you have already set up the SQL database before running the server. After you've set up the database and created a .env with the required variables, run
+
+```bash
+  python manage.py makemigrations
+  python manage.py migrate
+```
+
 Start the server
 
 ```bash
