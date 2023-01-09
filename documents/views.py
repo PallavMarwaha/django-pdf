@@ -1,6 +1,7 @@
 import os
 
 import cv2
+import magic
 import numpy as np
 import PyPDF2
 import pypdfium2 as pdfium
@@ -140,6 +141,14 @@ def ocr(file):
         return content
 
 
+def get_file_type(file):
+    """
+    Helper function to return the file type using python-magic module.
+    """
+    mime = magic.from_buffer(file.read(2048), mime=True)
+    return mime
+
+
 @login_required(login_url="users:user-login")
 def document_upload(request):
     """
@@ -150,6 +159,19 @@ def document_upload(request):
 
         if form.is_valid():
             pdf_doc = request.FILES["document"]
+
+            # TODO: Return proper error messages to the front end.
+            # To check if the file is valid
+            if not (
+                get_file_type(pdf_doc) == "application/pdf"
+                or get_file_type(pdf_doc) == "image/png"
+            ):
+                print("The file is not in valid image/PDF format.")
+                return HttpResponseRedirect(reverse("users:documents:document-upload"))
+
+            if len(pdf_doc.name) > 50:
+                short_pdf_name = f"{pdf_doc.name[0:30]}...{pdf_doc.name[-10:]}"
+                pdf_doc.name = short_pdf_name
 
             # Create PDF object
             pdf_obj = PDFDocument.objects.create(

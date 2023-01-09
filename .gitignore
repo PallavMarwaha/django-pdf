@@ -63,3 +63,4 @@ migrations
 db.sqlite3
 
 media
+pyproject.toml
