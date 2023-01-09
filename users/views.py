@@ -52,6 +52,7 @@ def user_signup(request):
             # Check if the user does not already exist and create new user
             if not User.objects.filter(username=username).exists():
                 User.objects.create_user(username=username, password=password)
+                return HttpResponseRedirect(reverse("users:user-login"))
             else:
                 # if the user already exists
                 return HttpResponseRedirect(reverse("users:user-login"))

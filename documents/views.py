@@ -1,11 +1,14 @@
 import os
 
+import cv2
+import magic
+import numpy as np
 import PyPDF2
 import pypdfium2 as pdfium
-from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.http import HttpResponseBadRequest, HttpResponseRedirect, HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from PIL import Image
@@ -51,10 +54,11 @@ def check_file_ext(file):
         return "image"
 
 
-def ocr(file):
+def ocr_old(file):
     """
-    Helper function which returns the converted text from either a PDF or an Image
+    Helper function which returns the converted text from either a PDF or an Image. Uses Pillow image directly without any filters.
     """
+    # COMMENT: Not being used anymore.
     # If the file type is PDF
     if check_file_ext(file) == "pdf":
         doc = pdfium.PdfDocument(file)
@@ -68,7 +72,7 @@ def ocr(file):
             )
             content = ""
             pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
-            image_text = pytesseract.image_to_string(pil_image)
+            image_text = pytesseract.image_to_string(pil_image, lang="eng")
 
             content = image_text
             return content
@@ -86,6 +90,65 @@ def ocr(file):
         return content
 
 
+def ocr(file):
+    """
+    Helper function which returns the converted text from either a PDF or an Image. Uses OpenCV and sharpening kernels.
+    """
+    # If the file type is PDF
+    if check_file_ext(file) == "pdf":
+        doc = pdfium.PdfDocument(file)
+        # Check if the PDF contains more than one page
+        if len(doc) > 1:
+            return None
+        else:
+            page = doc.get_page(0)
+            pil_image = page.render_to(
+                pdfium.BitmapConv.pil_image,
+            )
+            content = ""
+            pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
+            image_text = pytesseract.image_to_string(pil_image, lang="eng")
+
+            content = image_text
+            return content
+
+    # If the file type is IMAGE
+    elif check_file_ext(file) == "image":
+
+        # Get Pillow image from the InMemory Stream
+        pil_image = Image.open(file)
+
+        # convert to CV2 image
+        cv2_img = np.array(pil_image)
+        cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
+
+        # Convert to grayscale image, apply filters and sharpen the image using a sharpening kernel
+        gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
+        sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+        sharpen = cv2.filter2D(gray, -1, sharpen_kernel)
+        thresh = cv2.threshold(
+            sharpen, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+        )[1]
+
+        content = ""
+
+        pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
+
+        # Convert the image to text using pytesseract
+        image_text = pytesseract.image_to_string(thresh)
+
+        content = image_text
+        return content
+
+
+def get_file_type(file):
+    """
+    Helper function to return the file type using python-magic module.
+    """
+    mime = magic.from_buffer(file.read(2048), mime=True)
+    return mime
+
+
 @login_required(login_url="users:user-login")
 def document_upload(request):
     """
@@ -96,6 +159,19 @@ def document_upload(request):
 
         if form.is_valid():
             pdf_doc = request.FILES["document"]
+
+            # TODO: Return proper error messages to the front end.
+            # To check if the file is valid
+            if not (
+                get_file_type(pdf_doc) == "application/pdf"
+                or get_file_type(pdf_doc) == "image/png"
+            ):
+                print("The file is not in valid image/PDF format.")
+                return HttpResponseRedirect(reverse("users:documents:document-upload"))
+
+            if len(pdf_doc.name) > 50:
+                short_pdf_name = f"{pdf_doc.name[0:30]}...{pdf_doc.name[-10:]}"
+                pdf_doc.name = short_pdf_name
 
             # Create PDF object
             pdf_obj = PDFDocument.objects.create(
@@ -161,3 +237,20 @@ def document_serve(request, text_id):
     response["Content-Disposition"] = f"attachment; filename=  {pdf_file_name}"
 
     return response
+
+
+@login_required(login_url="users:user-login")
+def document_delete(request, doc_id):
+    """
+    Deletes the document with the specified ID
+    """
+    # Check if the Text Document with the specified ID exists in the DB
+    try:
+        user = User.objects.get(username=request.user.username)
+        doc = PDFDocument.objects.get(user=user, id=doc_id)
+        doc.delete()
+        # text_doc = TextDocument.objects.delete(user=user, id=text_id)
+    except PDFDocument.DoesNotExist:
+        return HttpResponseRedirect(reverse("users:user-dashboard"))
+
+    return HttpResponseRedirect(reverse("users:user-dashboard"))
